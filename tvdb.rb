@@ -54,7 +54,6 @@ class Tvdb
     end
     
     episodes
-    
   end
 
   def episode_updates(item_id)
@@ -111,7 +110,7 @@ class Tvdb
     end
 
     def retrieve_all_episodes
-      @client.get_episodes(@id)
+      @episodes ||= @client.get_episodes(@id)
     end
     
     def retrieve_banners
@@ -145,6 +144,7 @@ class Tvdb
     end
     
     def episode(season_num, episode_num)
+      # TODO check the @episodes cache first.
       begin
         Episode.new(@client.episode_updates(@client.get_episode(@id, season_num, episode_num)["id"]))        
       rescue 
