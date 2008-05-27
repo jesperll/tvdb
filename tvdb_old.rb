@@ -16,7 +16,7 @@ require 'rubygems'
 require 'net/http'
 require 'xmlsimple'
 
-class Tvdb
+class TvdbOld
   
   # TODO add API key to constructor for new api
   def initialize
