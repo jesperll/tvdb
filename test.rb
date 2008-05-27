@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby
 #
-#  Created by Jon Maddox on 2007-08-16.
-#  Copyright (c) 2007. All rights reserved.
+#  Created by Bodaniel Jeanes (me@bjeanes.com) on 2008-05-27.
+#  Copyright (c) 2008. All rights reserved.
 
+require 'test/unit'
 require 'tvdb'
 
-tvdb = Tvdb.new
-results = tvdb.search("life of ryan")
-series = results.first
-
-puts series.network
+class TestTvdb < Test::Unit::TestCase
+  # TODO add tests for new api
+end

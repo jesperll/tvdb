@@ -18,6 +18,7 @@ require 'xmlsimple'
 
 class Tvdb
   
+  # TODO add API key to constructor for new api
   def initialize
     @host = 'http://thetvdb.com/interfaces'
   end
@@ -26,7 +27,7 @@ class Tvdb
     Net::HTTP.get_response(URI.parse(URI.encode(url))).body.to_s
   end
 
-
+  # returns array of Series objects that match search terms
   def search(series_name)
     series = []
     response = XmlSimple.xml_in(http_get("#{@host}/GetSeries.php?seriesname=#{series_name}"), { 'ForceArray' => false })
