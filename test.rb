@@ -7,5 +7,16 @@ require 'test/unit'
 require 'tvdb'
 
 class TestTvdb < Test::Unit::TestCase
-  # TODO add tests for new api
+  def test_search_returns_array
+    assert_equal(Array, api.search("My Name Is Earl").class)
+  end
+  
+  def test_sucessfull_search_results_contain_series_objects
+    assert_equal(Tvdb::Series, api.search("My Name Is Earl").first.class)
+  end
+  
+  private
+  def api
+    @api ||= Tvdb.new
+  end
 end

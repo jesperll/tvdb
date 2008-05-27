@@ -10,8 +10,6 @@
 # series.banners.each { |e| puts e.inspect }
 # series.episodes.each { |e| puts e.inspect }
 
-
-
 require 'rubygems'
 require 'net/http'
 require 'xmlsimple'
