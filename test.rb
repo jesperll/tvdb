@@ -6,17 +6,55 @@
 require 'test/unit'
 require 'tvdb'
 
-class TestTvdb < Test::Unit::TestCase
+class TestTvdb < Test::Unit::TestCase  
   def test_search_returns_array
-    assert_equal(Array, api.search("My Name Is Earl").class)
+    assert_instance_of(Array, api.search("My Name Is Earl"))
   end
   
-  def test_sucessfull_search_results_contain_series_objects
-    assert_equal(Tvdb::Series, api.search("My Name Is Earl").first.class)
+  def test_sucessful_search_results_contain_series_objects
+    assert_instance_of(Tvdb::Series, api.search("My Name Is Earl").first)
   end
   
   private
   def api
     @api ||= Tvdb.new
+  end
+end
+
+class TestTvdbSeries < Test::Unit::TestCase
+  def test_create_from_id_returns_valid_object
+    series = Tvdb::Series.new(75397)
+    
+    assert_instance_of(Tvdb::Series, series)
+    assert_equal("My Name Is Earl", series.name)
+    assert_equal("2005-09-01", series.first_aired)
+  end
+  
+  # http://www.thetvdb.com/wiki/index.php/API:GetSeries
+  def test_create_from_getseries_search_node_returns_valid_object
+    doc = Document.new open("http://www.thetvdb.com/api/GetSeries.php?seriesname=My+Name+Is+Earl")
+
+    series = Tvdb::Series.new doc.elements["Data/Series"]
+    assert_equal("My Name Is Earl", series.name)
+  end
+  
+  # http://www.thetvdb.com/wiki/index.php/API:Base_Series_Record
+  def test_create_from_base_series_record_returns_valid_object
+    doc = Document.new open("http://www.thetvdb.com/api/386D256B71BD63AA/series/75397/en.xml")
+    series = Tvdb::Series.new(doc)
+    
+    assert_instance_of(Tvdb::Series, series)
+    assert_equal("My Name Is Earl", series.name)
+  end
+  
+  # http://www.thetvdb.com/wiki/index.php/API:Full_Series_Record
+  def test_create_from_full_series_record_returns_valid_object_with_episodes
+    doc = Document.new open("http://www.thetvdb.com/api/386D256B71BD63AA/series/75397/all/en.xml")
+    series = Tvdb::Series.new(doc)
+    
+    assert_instance_of(Tvdb::Series, series)
+    assert_equal("My Name Is Earl", series.name)
+    # bypass getter to make sure they aren't fetched
+    assert_not_equal(0, series.instance_variable_get("@episodes").size)
   end
 end

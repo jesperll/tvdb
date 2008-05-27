@@ -34,37 +34,32 @@ class Tvdb
   
   class Series 
     attr_accessor :id, :status, :runtime, :airs_time, :airs_day_of_week, 
-                  :genre, :name, :overview, :network, :seasons, :banner
+                  :genre, :name, :overview, :network, :seasons, :banner,
+                  :first_aired
     
     def initialize(details, api = Tvdb.new)
-      if details.is_a? Fixnum        
-        @api           = api
-        @id            = details["seriesid"].text.to_i rescue ""
-        @name          = details["SeriesName"].text    rescue ""
-        @banner        = details["banner"].text        rescue ""
-        @overview      = details["overview"].text      rescue ""
+      @api = api
+      
+      # CAN'T GET THIS TO WORK WITH CASE AND I AM TIRED </caps>
+      case details
+        when Fixnum:
+          @id = details
+          get_info
+        when Document: # Must come before Element or causes weird shit
+          set_data_from_rexml_elements details.elements["Data/Series"].elements
+          @episodes ||= details.elements.collect('Data/Episode') {|e|e}
+        when Elements:
+          set_data_from_rexml_elements details
+        when Element:
+          set_data_from_rexml_elements details.elements
       else
-        @id = details
-        get_meta
+        raise ArgumentError, "Can't make Tvdb::Series object with #{details.class}"
       end
     end
     
-    def get_meta
+    def get_info
       doc = Document.new open("#{@api.url}/series/#{@id}/en.xml")
-      series = doc.root.elements.first.elements
-      
-      @id               = series["seriesid"].text.to_i  rescue ""
-      @name             = series["SeriesName"].text     rescue ""
-      @banner           = series["banner"].text         rescue ""
-      @overview         = series["overview"].text       rescue ""
-      @airs_time        = series["Airs_Time"].text      rescue ""
-      @airs_day_of_week = series["Airs_DayOfWeek"].text rescue ""
-      @genre            = series["Genre"].text          rescue ""
-      @network          = series["Network"].text        rescue ""
-      @status           = series["Status"].text         rescue ""
-      @runtime          = series["Runtime"].text        rescue ""
-      @updated_at       = series["lastupdated"].text    rescue ""
-      @rating           = series["rating"].text         rescue ""
+      set_data_from_rexml_elements doc.elements["*/Series"].elements
     ensure                                               
       nil
     end
@@ -83,6 +78,23 @@ class Tvdb
       doc = Document.new open("#{@api.url}/series/#{@id}/default/#{season}/#{number}")
       
       Episode.new(doc.elements["Episode"], @api)
+    end
+    
+    private
+    def set_data_from_rexml_elements(data)
+      @id               = data["seriesid"].text.to_i  rescue ""
+      @name             = data["SeriesName"].text     rescue ""
+      @banner           = data["banner"].text         rescue ""
+      @overview         = data["overview"].text       rescue ""
+      @airs_time        = data["Airs_Time"].text      rescue ""
+      @first_aired      = data["FirstAired"].text     rescue ""
+      @airs_day_of_week = data["Airs_DayOfWeek"].text rescue ""
+      @genre            = data["Genre"].text          rescue ""
+      @network          = data["Network"].text        rescue ""
+      @status           = data["Status"].text         rescue ""
+      @runtime          = data["Runtime"].text        rescue ""
+      @updated_at       = data["lastupdated"].text    rescue ""
+      @rating           = data["rating"].text         rescue ""
     end
   end
   
