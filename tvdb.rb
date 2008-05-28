@@ -88,7 +88,7 @@ class Tvdb
       @banner           = data["banner"].text         rescue ""
       @overview         = data["overview"].text       rescue ""
       @airs_time        = data["Airs_Time"].text      rescue ""
-      @first_aired      = data["FirstAired"].text     rescue ""
+      @first_aired      = data["FirstAired"].text     rescue "" # TODO: make this a Date object
       @airs_day_of_week = data["Airs_DayOfWeek"].text rescue ""
       @genre            = data["Genre"].text          rescue ""
       @network          = data["Network"].text        rescue ""
@@ -100,9 +100,33 @@ class Tvdb
   end
   
   class Episode
+    attr_accessor :id, :season, :number, :name, :overview, :air_date, :thumb, :season_id
+    
     def initialize(details, api = Tvdb.new)
       @api = api
-      @deails = details
+      
+      case details
+      when Document:
+        set_data_from_rexml_elements details.elements["Data/Episode"].elements
+      when Element:
+        set_data_from_rexml_elements details.elements
+      when Elements:
+        set_data_from_rexml_elements details
+      else
+        raise ArgumentError, "Can't make Tvdb::Episode object with #{details.class}"
+      end
+    end
+    
+    private
+    def set_data_from_rexml_elements(data)
+      @id = data["id"].text.to_i rescue nil
+      @season = data["SeasonNumber"].text.to_i rescue nil
+      @season_id = data["seasonid"].text.to_i rescue nil
+      @number = data["EpisodeNumber"].text.to_i rescue nil
+      @name = data["EpisodeName"].text rescue ""
+      @overview = data["Overview"].text rescue ""
+      @air_date = data["FirstAired"].text rescue "" # TODO: make this a Date object
+      @thumb = data["filename"].text rescue ""
     end
   end
   

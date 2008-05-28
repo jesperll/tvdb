@@ -51,10 +51,26 @@ class TestTvdbSeries < Test::Unit::TestCase
   def test_create_from_full_series_record_returns_valid_object_with_episodes
     doc = Document.new open("http://www.thetvdb.com/api/386D256B71BD63AA/series/75397/all/en.xml")
     series = Tvdb::Series.new(doc)
-    
     assert_instance_of(Tvdb::Series, series)
     assert_equal("My Name Is Earl", series.name)
     # bypass getter to make sure they aren't fetched
     assert_not_equal(0, series.instance_variable_get("@episodes").size)
+  end
+end
+
+class TestTvdbEpisode < Test::Unit::TestCase
+  
+  # http://www.thetvdb.com/wiki/index.php/API:Base_Episode_Record
+  def test_create_from_base_episode_record_returns_valid_object
+    #:id, :season_number, :number, :name, :overview, :air_date, :thumb
+    doc = Document.new open("http://www.thetvdb.com/api/386D256B71BD63AA/series/75397/default/2/5/en.xml")
+    
+    episode = Tvdb::Episode.new(doc)
+    
+    assert_instance_of(Tvdb::Episode, episode)
+    assert_equal("Van Hickey", episode.name)
+    assert_equal(16331, episode.season_id)
+    assert_equal(2, episode.season)
+    assert_equal(5, episode.number)
   end
 end
