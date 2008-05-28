@@ -13,6 +13,8 @@ require 'rexml/document'
 include REXML
 
 class Tvdb
+  attr_accessor :cache
+  
   def initialize(api_key='386D256B71BD63AA')
     @api_key = api_key
     @search = "http://www.thetvdb.com/api"
@@ -21,11 +23,11 @@ class Tvdb
   end
   
   def search(series_name)
-    series = []
-    doc = Document.new open("#{@search}/GetSeries.php?seriesname=#{URI.escape(series_name)}")
-    doc.elements.each("Data/Series") { |s| series << Series.new(s.elements, self) }
-    
-    series
+    @cache.get(:search, series_name) || begin
+      doc = Document.new open("#{@search}/GetSeries.php?seriesname=#{URI.escape(series_name)}")
+      s = doc.elements.collect("Data/Series") { |s| Series.new(s.elements, self) }
+      @cache.set(:search, series_name, s)
+    end
   end
   
   def url
@@ -40,14 +42,13 @@ class Tvdb
     def initialize(details, api = Tvdb.new)
       @api = api
       
-      # CAN'T GET THIS TO WORK WITH CASE AND I AM TIRED </caps>
       case details
         when Fixnum:
           @id = details
           get_info
         when Document: # Must come before Element or causes weird shit
           set_data_from_rexml_elements details.elements["Data/Series"].elements
-          @episodes ||= details.elements.collect('Data/Episode') {|e|e}
+          @episodes ||= details.elements.collect('Data/Episode') {|e| Episode.new(e) }
         when Elements:
           set_data_from_rexml_elements details
         when Element:
@@ -82,7 +83,7 @@ class Tvdb
     
     private
     def set_data_from_rexml_elements(data)
-      @id               = data["seriesid"].text.to_i  rescue ""
+      @id               = data["seriesid"].text.to_i  rescue nil
       @name             = data["SeriesName"].text     rescue ""
       @banner           = data["banner"].text         rescue ""
       @overview         = data["overview"].text       rescue ""
@@ -100,7 +101,7 @@ class Tvdb
   
   class Episode
     def initialize(details, api = Tvdb.new)
-      @api = client
+      @api = api
       @deails = details
     end
   end
@@ -112,5 +113,22 @@ class Tvdb
   end
   
   class CacheStore
+    def initialize
+      @cache = {}
+    end
+    
+    # returns value that was set
+    def set(type, key, value)
+      type = type.to_sym
+      
+      @cache[type] = {} if @cache[type].nil?
+      @cache[type][key] = value
+    end
+    
+    def get(type, key)
+      @cache[type.to_sym][key]
+    rescue
+      nil
+    end
   end
 end
