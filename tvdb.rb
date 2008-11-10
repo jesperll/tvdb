@@ -15,14 +15,14 @@ include REXML
 class Tvdb
   attr_accessor :cache
   
-  def initialize(api_key='386D256B71BD63AA')
+  def initialize(api_key='88DD19AA90DD8AAE')
     @api_key = api_key
     @search = "http://www.thetvdb.com/api"
     @api = "#{@search}/#{@api_key}"
     @cache = CacheStore.new # we'll be doing caching on all requests
   end
   
-  def search(series_name)
+  def getSeries(series_name)
     @cache.get(:search, series_name) || begin
       doc = Document.new open("#{@search}/GetSeries.php?seriesname=#{URI.escape(series_name)}")
       s = doc.elements.collect("Data/Series") { |s| Series.new(s.elements, self) }
@@ -30,6 +30,10 @@ class Tvdb
     end
   end
   
+  def getEpisodeByAirDate(seriesid, airdate)
+    Document.new open("#{@search}/GetEpisodeByAirDate.php?apikey=#{@api_key}&seriesid=#{seriesid}&airdate=#{airdate}")      
+  end
+
   def url
     @api
   end
@@ -81,9 +85,15 @@ class Tvdb
       Episode.new(doc.elements["Episode"], @api)
     end
     
+    def episode(airdate)
+      doc = @api.getEpisodeByAirDate(@id, airdate)
+
+      Episode.new(doc.elements["Data/Episode"], @api)
+    end
+
     private
     def set_data_from_rexml_elements(data)
-      @id               = data["seriesid"].text.to_i  rescue nil
+      @id               = data["id"].text.to_i  rescue nil
       @name             = data["SeriesName"].text     rescue ""
       @banner           = data["banner"].text         rescue ""
       @overview         = data["overview"].text       rescue ""
